@@ -174,6 +174,17 @@ The following update can be found in the [evaluation](https://github.com/naldebo
 
 2. <b>--augment</b>: Use prediction-time augmentation. Predictions will be calculated at 0, 90, 180 and 270 degrees, and averaged for a final prediction.
 
+### Deploy test set
+
+A script for generating predictions on a test set, [deploy.py](https://github.com/naldeborgh7575/tensorflow-deeplab-resnet/blob/master/deploy.py) has been added. This script runs similarly to [evaluate.py](https://github.com/naldeborgh7575/tensorflow-deeplab-resnet/blob/master/evaluate.py) but also includes a heatmap flag. To create a heatmap for a given class simply append --heatmap [class number] to the command. Class  number is the index of the class that can be found in [deeplab_resnet/utils.py](https://github.com/naldeborgh7575/tensorflow-deeplab-resnet/blob/master/deeplab_resnet/utils.py#L7).
+
+Example:
+
+```bash
+# create predictions with augmentation in the form of a heatmap of relative likelihoods of class 1
+deploy.py --augment --heatmap 1
+```
+
 ### Sample run
 
 1. Fine tune final layers.
