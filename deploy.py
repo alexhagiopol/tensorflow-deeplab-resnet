@@ -54,6 +54,8 @@ def get_arguments():
                         help="Use prediction-time augemntation, predict output of 4 rotations and average.")
     parser.add_argument("--crf", action='store_true',
                         help="Use a CRF to clean up prediction.")
+    parser.add_argument("--heatmap", type=int, default='-1',
+                        help="createa heatmap of likelihood for the class specified.")
     return parser.parse_args()
 
 
@@ -116,8 +118,13 @@ def main():
             break
 
     pred = tf.reduce_mean(tf.concat(preds, axis=0), axis=0)
-    pred = tf.argmax(tf.expand_dims(pred, dim=0), dimension=3)
-    pred = tf.cast(tf.expand_dims(pred, dim=3), tf.int32) # create 4D tensor
+
+    if args.heatmap < 0:
+        pred = tf.argmax(tf.expand_dims(pred, dim=0), dimension=3)
+        pred = tf.cast(tf.expand_dims(pred, dim=3), tf.int32)
+    else:
+        pred = tf.expand_dims(pred[:,:,args.heatmap], dim=0)
+        pred = tf.cast(pred, tf.int32)
 
     # Set up tf session and initialize variables.
     config = tf.ConfigProto()
@@ -141,8 +148,19 @@ def main():
     # Iterate over training steps.
     for step in tqdm(range(args.num_steps)):
         preds, img_path = sess.run([pred, reader.queue[0]])
-        msk = decode_labels(preds, num_classes=args.num_classes)
-        im = Image.fromarray(msk[0])
+
+        if args.heatmap < 0:
+            preds = decode_labels(preds, num_classes=args.num_classes)
+            im = Image.fromarray(preds[0])
+        else:
+            pr = np.zeros((1,preds.shape[1],preds.shape[2],3))
+            preds += abs(np.min(preds))
+            preds *= 255/np.max(preds)
+            pr[:,:,:,0] = preds
+            pr[:,:,:,1] = preds
+            pr[:,:,:,2] = preds
+            im = Image.fromarray(pr[0].astype('uint8'))
+
         img_name = os.path.split(img_path)[-1]
         im.save(os.path.join(args.save_dir + img_name))
     coord.request_stop()
