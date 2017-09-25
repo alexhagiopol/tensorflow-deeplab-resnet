@@ -16,7 +16,7 @@ import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
 
-from deeplab_resnet import DeepLabResNetModel, ImageReader, dense_crf, inv_preprocess, prepare_label
+from deeplab_resnet import DeepLabResNetModel, ImageReader, dense_crf, inv_preprocess, prepare_label, threshold
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
@@ -50,6 +50,8 @@ def get_arguments():
                         help="Use prediction-time augemntation, predict output of 4 rotations and average.")
     parser.add_argument("--crf", action='store_true',
                         help="Use a CRF to clean up prediction.")
+    parser.add_argument('--thresh', nargs='+', type=float, default=None,
+                        help='a certain class and probability threshold at which assign that class')
     return parser.parse_args()
 
 
@@ -112,7 +114,15 @@ def main():
             break
 
     pred = tf.reduce_mean(tf.concat(preds, axis=0), axis=0)
-    pred = tf.argmax(tf.expand_dims(pred, dim=0), dimension=3)
+
+    # Set class based on threshold
+    if args.thresh:
+        pred = tf.py_func(threshold, [tf.nn.softmax(pred), int(args.thresh[0]), float(args.thresh[1])], tf.int32)
+        pred = tf.expand_dims(pred, dim=0)
+
+    else:
+        pred = tf.argmax(tf.expand_dims(pred, dim=0), dimension=3)
+
     pred = tf.cast(tf.expand_dims(pred, dim=3), tf.int32) # create 4D tensor
 
     # mIoU
@@ -141,7 +151,7 @@ def main():
     # Iterate over training steps.
     for step in tqdm(range(args.num_steps)):
         preds, _ = sess.run([pred, update_op])
-    print('Mean IoU: {:.3f}'.format(mIoU.eval(session=sess)))
+    print('Mean IoU: {:.10f}'.format(mIoU.eval(session=sess)))
     coord.request_stop()
     coord.join(threads)
 

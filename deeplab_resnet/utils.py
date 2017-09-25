@@ -123,3 +123,15 @@ def dense_crf(probs, img=None, n_iters=10, n_classes=len(label_colours),
     Q = d.inference(n_iters)
     preds = np.array(Q, dtype=np.float32).reshape((n_classes, h, w)).transpose(1, 2, 0)
     return np.expand_dims(preds, 0)
+
+def threshold(pred, class_ix, threshold):
+    # indices where class is above threshold
+    above_thresh = list(zip(*np.where(pred[:,:,class_ix] >= threshold)))
+    pred[:,:,class_ix] = 0
+    pred_ix = np.argmax(pred, axis=-1)
+
+    # Set all values above threshold to class value
+    for i in above_thresh:
+        pred_ix[i] = class_ix
+
+    return pred_ix.astype('int32')
