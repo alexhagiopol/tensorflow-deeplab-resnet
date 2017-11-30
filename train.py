@@ -22,9 +22,10 @@ from deeplab_resnet import DeepLabResNetModel, ImageReader, decode_labels, inv_p
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
 BATCH_SIZE = 10
-DATA_DIRECTORY = '/home/VOCdevkit'
+DATA_DIRECTORY = './dataset/VOCdevkit'
 DATA_LIST_PATH = './dataset/train.txt'
-VAL_SIZE = 500 # only relevant if --val-list arg passed
+VAL_LIST_PATH = './dataset/val.txt'
+VAL_SIZE = 1449 # only relevant if --val-list arg passed
 IGNORE_LABEL = 255
 INPUT_SIZE = '321,321'
 LEARNING_RATE = 2.5e-4
@@ -53,7 +54,7 @@ def get_arguments():
                         help="Path to the directory containing the PASCAL VOC dataset.")
     parser.add_argument("--data-list", type=str, default=DATA_LIST_PATH,
                         help="Path to the file listing the images in the dataset.")
-    parser.add_argument("--val-list", type=str, default=None,
+    parser.add_argument("--val-list", type=str, default=VAL_LIST_PATH,
                         help="Path to the file listing the validation images.")
     parser.add_argument("--val-size", type=int, default=VAL_SIZE,
                         help="Number of samples to validate on")
