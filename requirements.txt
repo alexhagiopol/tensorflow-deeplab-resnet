@@ -5,3 +5,4 @@ Pillow>=2.3.0
 six>=1.1.0
 tqdm>=4.11.0
 pydensecrf>=1.0rc2
+tensorflow-gpu==1.2.1
