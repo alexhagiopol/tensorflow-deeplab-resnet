@@ -21,8 +21,8 @@ from deeplab_resnet import DeepLabResNetModel, ImageReader, decode_labels, inv_p
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
-BATCH_SIZE = 4
-DATA_DIRECTORY = '/home/VOCdevkit'
+BATCH_SIZE = 6
+DATA_DIRECTORY = './dataset/VOCdevkit'
 DATA_LIST_PATH = './dataset/train.txt'
 VAL_SIZE = 500 # only relevant if --val-list arg passed
 IGNORE_LABEL = 255

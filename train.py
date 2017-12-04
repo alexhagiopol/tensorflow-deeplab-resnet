@@ -21,11 +21,11 @@ from deeplab_resnet import DeepLabResNetModel, ImageReader, decode_labels, inv_p
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
-BATCH_SIZE = 10
+BATCH_SIZE = 7
 DATA_DIRECTORY = './dataset/VOCdevkit'
 DATA_LIST_PATH = './dataset/train.txt'
 VAL_LIST_PATH = './dataset/val.txt'
-VAL_SIZE = 1449 # only relevant if --val-list arg passed
+VAL_SIZE = 500 # only relevant if --val-list arg passed
 IGNORE_LABEL = 255
 INPUT_SIZE = '321,321'
 LEARNING_RATE = 2.5e-4
@@ -34,8 +34,8 @@ NUM_CLASSES = 21
 NUM_STEPS = 20001
 POWER = 0.9
 RANDOM_SEED = 1234
-RESTORE_FROM = './deeplab_resnet.ckpt'
-SAVE_NUM_IMAGES = 2
+RESTORE_FROM = './deeplab_resnet_init.ckpt'
+SAVE_NUM_IMAGES = 5
 SAVE_PRED_EVERY = 100
 SNAPSHOT_DIR = './snapshots/'
 WEIGHT_DECAY = 0.0005
@@ -54,7 +54,7 @@ def get_arguments():
                         help="Path to the directory containing the PASCAL VOC dataset.")
     parser.add_argument("--data-list", type=str, default=DATA_LIST_PATH,
                         help="Path to the file listing the images in the dataset.")
-    parser.add_argument("--val-list", type=str, default=VAL_LIST_PATH,
+    parser.add_argument("--val-list", type=str,
                         help="Path to the file listing the validation images.")
     parser.add_argument("--val-size", type=int, default=VAL_SIZE,
                         help="Number of samples to validate on")
@@ -282,8 +282,9 @@ def main():
     for step in range(args.num_steps):
         start_time = time.time()
         feed_dict = { step_ph : step }
-
+        print("Doing step ", str(step), " ...")
         if step % args.save_pred_every == 0:
+            print("     Calling sess.run ...")
             loss_value, images, labels, preds, summary, _ = sess.run([reduced_loss, image_batch, label_batch, pred, total_summary, train_op], feed_dict=feed_dict)
             summary_writer.add_summary(summary, step)
 
