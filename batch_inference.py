@@ -88,7 +88,7 @@ def main():
 
     for rots in range(4):
         image = tf.image.rot90(image_orig, k=rots)
-        image_batch, label_batch = tf.expand_dims(image, dim=0), tf.expand_dims(label, dim=0) # Add one batch dimension.
+        image_batch = tf.expand_dims(image, dim=0)
 
         # Create network.
         net = DeepLabResNetModel({'data': image_batch}, is_training=False, num_classes=args.num_classes)
@@ -120,17 +120,10 @@ def main():
     if args.thresh:
         pred = tf.py_func(threshold, [tf.nn.softmax(pred), int(args.thresh[0]), float(args.thresh[1])], tf.int32)
         pred = tf.expand_dims(pred, dim=0)
-
     else:
         pred = tf.argmax(tf.expand_dims(pred, dim=0), dimension=3)
 
     pred = tf.cast(tf.expand_dims(pred, dim=3), tf.int32) # create 4D tensor
-
-    # mIoU
-    # pred = tf.reshape(pred, [-1,])
-    # gt = tf.reshape(label_batch, [-1,])
-    # weights = tf.cast(tf.less_equal(gt, args.num_classes - 1), tf.int32) # Ignoring all labels greater than or equal to n_classes.
-    # mIoU, update_op = tf.contrib.metrics.streaming_mean_iou(pred, gt, num_classes=args.num_classes, weights=weights)
 
     # Set up tf session and initialize variables.
     config = tf.ConfigProto()
@@ -151,13 +144,10 @@ def main():
 
     # Iterate over training steps.
     for step in tqdm(range(args.num_steps)):
-        #preds, _ = sess.run([pred, update_op])
         preds = sess.run(pred)
         msk = decode_labels(preds, num_classes=args.num_classes)
         im = Image.fromarray(msk[0])
-        im.save('mask'+str(step)+'.png')
-
-    # print('Mean IoU: {:.10f}'.format(mIoU.eval(session=sess)))
+        im.save('output/mask'+str(step)+'.png')
     coord.request_stop()
     coord.join(threads)
 
