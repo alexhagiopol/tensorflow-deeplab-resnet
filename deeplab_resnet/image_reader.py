@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
+import glob
 
 def image_scaling(img, label):
     """
@@ -161,7 +162,12 @@ class ImageReader(object):
         self.coord = coord
 
         self.image_list, self.label_list = read_labeled_image_list(self.data_dir, self.data_list)
+        #print("ORIGINAL FUNCTION")
+        #print("image list is " + str(self.image_list))
+
         self.images = tf.convert_to_tensor(self.image_list, dtype=tf.string)
+
+        #print(self.images)
         self.labels = tf.convert_to_tensor(self.label_list, dtype=tf.string)
         self.queue = tf.train.slice_input_producer([self.images, self.labels],
                                                    shuffle=input_size is not None) # not shuffling if it is val
@@ -178,3 +184,21 @@ class ImageReader(object):
         image_batch, label_batch = tf.train.batch([self.image, self.label],
                                                   num_elements)
         return image_batch, label_batch
+
+class InferenceImageReader(object):
+    def __init__(self, data_dir, img_mean, coord):
+        self.data_dir = data_dir
+        self.coord = coord
+        self.image_list = glob.glob(os.path.join(data_dir, "*"))
+        self.images = tf.convert_to_tensor(self.image_list, dtype=tf.string)
+        #print("MY FUNCTION")
+        #print("image list is " + str(self.image_list))
+        self.queue = tf.train.slice_input_producer([self.images])  # not shuffling if it is val
+        img_contents = tf.read_file(self.queue[0])
+        img = tf.image.decode_jpeg(img_contents, channels=3)
+        img_r, img_g, img_b = tf.split(axis=2, num_or_size_splits=3, value=img)
+        img = tf.cast(tf.concat(axis=2, values=[img_b, img_g, img_r]), dtype=tf.float32)
+        # Extract mean.
+        img -= img_mean
+        self.image = img
+

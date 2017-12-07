@@ -16,12 +16,13 @@ import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
 
-from deeplab_resnet import DeepLabResNetModel, ImageReader, dense_crf, inv_preprocess, prepare_label, decode_labels, threshold
+from deeplab_resnet.image_reader import InferenceImageReader
+from deeplab_resnet import DeepLabResNetModel, dense_crf, inv_preprocess, prepare_label, decode_labels, threshold
 from PIL import Image
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
-DATA_DIRECTORY = '/home/VOCdevkit'
+DATA_DIRECTORY = './dataset/VOCdevkit'
 DATA_LIST_PATH = './dataset/val.txt'
 IGNORE_LABEL = 255
 NUM_CLASSES = 21
@@ -75,16 +76,11 @@ def main():
 
     # Load reader.
     with tf.name_scope("create_inputs"):
-        reader = ImageReader(
+        reader = InferenceImageReader(
             args.data_dir,
-            args.data_list,
-            None, # No defined input size.
-            False, # No random scale.
-            False, # No random mirror.
-            args.ignore_label,
             IMG_MEAN,
             coord)
-        image_orig, label = reader.image, reader.label
+        image_orig = reader.image
 
     for rots in range(4):
         image = tf.image.rot90(image_orig, k=rots)
