@@ -22,8 +22,9 @@ from PIL import Image
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
-DATA_DIRECTORY = './dataset/VOCdevkit'
+INPUT_DIRECTORY = './dataset/VOCdevkit'
 DATA_LIST_PATH = './dataset/val.txt'
+OUTPUT_DIRECTORY = './output'
 IGNORE_LABEL = 255
 NUM_CLASSES = 21
 NUM_STEPS = 1449 # Number of images in the validation set.
@@ -36,12 +37,10 @@ def get_arguments():
       A list of parsed arguments.
     """
     parser = argparse.ArgumentParser(description="DeepLabLFOV Network")
-    parser.add_argument("--data-dir", type=str, default=DATA_DIRECTORY,
+    parser.add_argument("--input-dir", type=str, default=INPUT_DIRECTORY,
                         help="Path to the directory containing the PASCAL VOC dataset.")
-    parser.add_argument("--data-list", type=str, default=DATA_LIST_PATH,
-                        help="Path to the file listing the images in the dataset.")
-    parser.add_argument("--ignore-label", type=int, default=IGNORE_LABEL,
-                        help="The index of the label to ignore during the training.")
+    parser.add_argument("--output-dir", type=str, default=OUTPUT_DIRECTORY,
+                        help="Path to the directory containing the PASCAL VOC dataset.")
     parser.add_argument("--num-classes", type=int, default=NUM_CLASSES,
                         help="Number of classes to predict (including background).")
     parser.add_argument("--num-steps", type=int, default=NUM_STEPS,
@@ -77,7 +76,7 @@ def main():
     # Load reader.
     with tf.name_scope("create_inputs"):
         reader = InferenceImageReader(
-            args.data_dir,
+            args.input_dir,
             IMG_MEAN,
             coord)
         image_orig = reader.image
@@ -138,12 +137,16 @@ def main():
     # Start queue threads.
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
 
+    # make output dir if
+    if not os.path.exists(args.output_dir):
+        os.mkdir(args.output_dir)
+
     # Iterate over training steps.
     for step in tqdm(range(args.num_steps)):
         preds = sess.run(pred)
         msk = decode_labels(preds, num_classes=args.num_classes)
         im = Image.fromarray(msk[0])
-        im.save('output/mask'+str(step)+'.png')
+        im.save(os.path.join(args.output_dir, 'mask'+str(step)+'.png'))
     coord.request_stop()
     coord.join(threads)
 
