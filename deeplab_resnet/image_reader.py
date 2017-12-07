@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import glob
 
+
 def image_scaling(img, label):
     """
     Randomly scales the images between 0.5 to 1.5 times the original size.
@@ -23,6 +24,7 @@ def image_scaling(img, label):
 
     return img, label
 
+
 def image_mirroring(img, label):
     """
     Randomly mirrors the images.
@@ -38,6 +40,7 @@ def image_mirroring(img, label):
     img = tf.reverse(img, mirror)
     label = tf.reverse(label, mirror)
     return img, label
+
 
 def random_crop_and_pad_image_and_labels(image, label, crop_h, crop_w, ignore_label=255):
     """
@@ -70,6 +73,7 @@ def random_crop_and_pad_image_and_labels(image, label, crop_h, crop_w, ignore_la
     label_crop.set_shape((crop_h,crop_w, 1))
     return img_crop, label_crop
 
+
 def read_labeled_image_list(data_dir, data_list):
     """Reads txt file containing paths to images and ground truth masks.
 
@@ -91,6 +95,7 @@ def read_labeled_image_list(data_dir, data_list):
         images.append(data_dir + image)
         masks.append(data_dir + mask)
     return images, masks
+
 
 def read_images_from_disk(input_queue, input_size, random_scale, random_mirror, ignore_label, img_mean): # optional pre-processing arguments
     """Read one image and its corresponding mask with optional pre-processing.
@@ -137,6 +142,7 @@ def read_images_from_disk(input_queue, input_size, random_scale, random_mirror, 
 
     return img, label
 
+
 class ImageReader(object):
     '''Generic ImageReader which reads images and corresponding segmentation
        masks from the disk, and enqueues them into a TensorFlow queue.
@@ -162,12 +168,7 @@ class ImageReader(object):
         self.coord = coord
 
         self.image_list, self.label_list = read_labeled_image_list(self.data_dir, self.data_list)
-        #print("ORIGINAL FUNCTION")
-        #print("image list is " + str(self.image_list))
-
         self.images = tf.convert_to_tensor(self.image_list, dtype=tf.string)
-
-        #print(self.images)
         self.labels = tf.convert_to_tensor(self.label_list, dtype=tf.string)
         self.queue = tf.train.slice_input_producer([self.images, self.labels],
                                                    shuffle=input_size is not None) # not shuffling if it is val
@@ -185,14 +186,13 @@ class ImageReader(object):
                                                   num_elements)
         return image_batch, label_batch
 
+
 class InferenceImageReader(object):
     def __init__(self, data_dir, img_mean, coord):
         self.data_dir = data_dir
         self.coord = coord
         self.image_list = glob.glob(os.path.join(data_dir, "*"))
         self.images = tf.convert_to_tensor(self.image_list, dtype=tf.string)
-        #print("MY FUNCTION")
-        #print("image list is " + str(self.image_list))
         self.queue = tf.train.slice_input_producer([self.images])  # not shuffling if it is val
         img_contents = tf.read_file(self.queue[0])
         img = tf.image.decode_jpeg(img_contents, channels=3)

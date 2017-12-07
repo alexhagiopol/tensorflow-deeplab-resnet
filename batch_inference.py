@@ -1,21 +1,8 @@
-"""Evaluation script for the DeepLab-ResNet network on the validation subset
-   of PASCAL VOC dataset.
-
-This script evaluates the model on 1449 validation images.
-"""
-
-from __future__ import print_function
-
 import argparse
-from datetime import datetime
 import os
-import sys
-import time
-
 import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
-
 from deeplab_resnet.image_reader import InferenceImageReader
 from deeplab_resnet import DeepLabResNetModel, dense_crf, inv_preprocess, prepare_label, decode_labels, threshold
 from PIL import Image
@@ -29,6 +16,7 @@ IGNORE_LABEL = 255
 NUM_CLASSES = 21
 NUM_STEPS = 1449 # Number of images in the validation set.
 RESTORE_FROM = './deeplab_resnet.ckpt'
+
 
 def get_arguments():
     """Parse all the arguments provided from the CLI.
@@ -67,7 +55,8 @@ def load(saver, sess, ckpt_path):
     saver.restore(sess, ckpt_path)
     print("Restored model parameters from {}".format(ckpt_path))
 
-def main():
+
+if __name__ == '__main__':
     args, preds = get_arguments(), []
 
     # Create queue coordinator.
@@ -149,6 +138,3 @@ def main():
         im.save(os.path.join(args.output_dir, os.path.basename(reader.image_list[step])+'_mask.png'))
     coord.request_stop()
     coord.join(threads)
-
-if __name__ == '__main__':
-    main()
