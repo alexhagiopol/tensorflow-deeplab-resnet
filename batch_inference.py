@@ -146,7 +146,7 @@ def main():
         preds = sess.run(pred)
         msk = decode_labels(preds, num_classes=args.num_classes)
         im = Image.fromarray(msk[0])
-        im.save(os.path.join(args.output_dir, 'mask'+str(step)+'.png'))
+        im.save(os.path.join(args.output_dir, os.path.basename(reader.image_list[step])+'_mask.png'))
     coord.request_stop()
     coord.join(threads)
 

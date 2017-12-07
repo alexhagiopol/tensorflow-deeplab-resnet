@@ -197,8 +197,6 @@ class InferenceImageReader(object):
         img_contents = tf.read_file(self.queue[0])
         img = tf.image.decode_jpeg(img_contents, channels=3)
         img_r, img_g, img_b = tf.split(axis=2, num_or_size_splits=3, value=img)
-        img = tf.cast(tf.concat(axis=2, values=[img_b, img_g, img_r]), dtype=tf.float32)
+        self.image = tf.cast(tf.concat(axis=2, values=[img_b, img_g, img_r]), dtype=tf.float32)
         # Extract mean.
-        img -= img_mean
-        self.image = img
-
+        self.image -= img_mean
