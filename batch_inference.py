@@ -2,20 +2,20 @@ import argparse
 import os
 import tensorflow as tf
 import numpy as np
+import glob
 from tqdm import tqdm
-from deeplab_resnet.image_reader import InferenceImageReader
 from deeplab_resnet import DeepLabResNetModel, dense_crf, inv_preprocess, prepare_label, decode_labels, threshold
 from PIL import Image
 
-IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
-
+# tuning constants
+IMG_MEAN = np.array((104.00698793, 116.66876762, 122.67891434), dtype=np.float32)
 INPUT_DIRECTORY = './dataset/VOCdevkit'
 DATA_LIST_PATH = './dataset/val.txt'
 OUTPUT_DIRECTORY = './output'
 IGNORE_LABEL = 255
 NUM_CLASSES = 21
-NUM_STEPS = 1449 # Number of images in the validation set.
 RESTORE_FROM = './deeplab_resnet.ckpt'
+RESIZE_TO = [512, 512]
 
 
 def get_arguments():
@@ -24,15 +24,13 @@ def get_arguments():
     Returns:
       A list of parsed arguments.
     """
-    parser = argparse.ArgumentParser(description="DeepLabLFOV Network")
+    parser = argparse.ArgumentParser(description="Example command: \n python .\\batch_inference.py --input-dir=./dataset/jenn_images --output-dir=./output --restore-from=deeplab_resnet.ckpt")
     parser.add_argument("--input-dir", type=str, default=INPUT_DIRECTORY,
                         help="Path to the directory containing the PASCAL VOC dataset.")
     parser.add_argument("--output-dir", type=str, default=OUTPUT_DIRECTORY,
                         help="Path to the directory containing the PASCAL VOC dataset.")
     parser.add_argument("--num-classes", type=int, default=NUM_CLASSES,
                         help="Number of classes to predict (including background).")
-    parser.add_argument("--num-steps", type=int, default=NUM_STEPS,
-                        help="Number of images in the validation set.")
     parser.add_argument("--restore-from", type=str, default=RESTORE_FROM,
                         help="Where restore model parameters from.")
     parser.add_argument("--augment", action='store_true',
@@ -56,6 +54,21 @@ def load(saver, sess, ckpt_path):
     print("Restored model parameters from {}".format(ckpt_path))
 
 
+class InferenceImageReader(object):
+    def __init__(self, data_dir, img_mean, coord, resize_to):
+        self.data_dir = data_dir
+        self.coord = coord
+        self.image_list = glob.glob(os.path.join(data_dir, "*"))
+        self.images = tf.convert_to_tensor(self.image_list, dtype=tf.string)
+        self.queue = tf.train.slice_input_producer([self.images])  # not shuffling if it is val
+        img_contents = tf.read_file(self.queue[0])
+        img = tf.image.resize_images(tf.image.decode_png(img_contents, channels=3), resize_to)
+        img_r, img_g, img_b = tf.split(axis=2, num_or_size_splits=3, value=img)
+        self.image = tf.cast(tf.concat(axis=2, values=[img_b, img_g, img_r]), dtype=tf.float32)
+        # Extract mean.
+        self.image -= img_mean
+
+
 if __name__ == '__main__':
     args, preds = get_arguments(), []
 
@@ -67,7 +80,8 @@ if __name__ == '__main__':
         reader = InferenceImageReader(
             args.input_dir,
             IMG_MEAN,
-            coord)
+            coord,
+            RESIZE_TO)
         image_orig = reader.image
 
     for rots in range(4):
@@ -131,7 +145,7 @@ if __name__ == '__main__':
         os.mkdir(args.output_dir)
 
     # Iterate over training steps.
-    for step in tqdm(range(args.num_steps)):
+    for step in tqdm(range(len(reader.image_list))):
         preds = sess.run(pred)
         msk = decode_labels(preds, num_classes=args.num_classes)
         im = Image.fromarray(msk[0])

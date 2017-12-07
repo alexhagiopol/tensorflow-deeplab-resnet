@@ -5,6 +5,7 @@ import os
 import sys
 import numpy as np
 import argparse
+sys.path.append('..')
 from kaffe import KaffeError, print_stderr
 from kaffe.tensorflow import TensorFlowTransformer
 

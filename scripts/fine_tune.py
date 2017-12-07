@@ -16,7 +16,7 @@ import time
 
 import tensorflow as tf
 import numpy as np
-
+sys.path.append('..')
 from deeplab_resnet import DeepLabResNetModel, ImageReader, decode_labels, inv_preprocess, prepare_label
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)

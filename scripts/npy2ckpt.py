@@ -11,7 +11,7 @@ import os
 
 import tensorflow as tf
 import numpy as np
-
+sys.path.append('..')
 from deeplab_resnet import DeepLabResNetModel
 
 SAVE_DIR = './'
